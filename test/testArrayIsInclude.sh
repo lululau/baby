@@ -3,17 +3,17 @@
 function testArrayIsInclude() {
 
     a=(10 20 "h w" '$"' "'" '\ ')
-    assertTrue 'arr.is_include "10" "a"'
-    assertTrue 'arr.is_include "20" "a"'
-    assertTrue 'arr.is_include "h w" "a"'
-    assertTrue 'arr.is_include "\$\"" "a"'
-    assertTrue 'arr.is_include "'\''" "a"'
-    assertTrue 'arr.is_include "\\ " "a"'
-    assertFalse 'arr.is_include "30" "a"'
-    assertFalse 'arr.is_include "\$" "a"'
-    assertFalse 'arr.is_include "\"" "a"'
-    assertFalse 'arr.is_include "\\" "a"'
-    assertFalse 'arr.is_include "'\'\''" "a"'
+    assertTrue 'arr.include? "10" "a"'
+    assertTrue 'arr.include? "20" "a"'
+    assertTrue 'arr.include? "h w" "a"'
+    assertTrue 'arr.include? "\$\"" "a"'
+    assertTrue 'arr.include? "'\''" "a"'
+    assertTrue 'arr.include? "\\ " "a"'
+    assertFalse 'arr.include? "30" "a"'
+    assertFalse 'arr.include? "\$" "a"'
+    assertFalse 'arr.include? "\"" "a"'
+    assertFalse 'arr.include? "\\" "a"'
+    assertFalse 'arr.include? "'\'\''" "a"'
 }
 
 

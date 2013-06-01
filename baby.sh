@@ -167,7 +167,7 @@ function arr.grep() {
     eval "arr._grep '$1' '$__func' \"\${$__arr_name[@]}\""
 }
 
-function arr._is_include() {
+function arr._include?() {
     local __value=$1
     shift
     local __elem
@@ -180,68 +180,77 @@ function arr._is_include() {
     return 1
 }
 
-function arr.is_include() {
-    local value=$1
-    value=${value//\'/\'\\\'\'}
-    local arr_name=$2
-    return $(eval "arr._is_include '$value' \"\${$arr_name[@]}\"; echo \$?")
+function arr.include?() {
+    local __value=$1
+    __value=${__value//\'/\'\\\'\'}
+    local __arr_name=$2
+    return $(eval "arr._include? '$__value' \"\${$__arr_name[@]}\"; echo \$?")
 }
 
 function arr._each() {
-    local func=$1
+    local __func=$1
     shift
-    local func_lines=$(str.lines "$func")
-    local func_name="tmp_func"
-    if [ "$func_lines" -gt 1 ]; then
-        local func_definition="
-        function $func_name()
-        $func
+    local __func_lines=$(str.lines "$__func")
+    local __func_name="__tmp_func"
+    if [ "$__func_lines" -gt 1 ]; then        
+        local __func_definition="
+        function $__func_name()
+        $__func
         "
-        eval "$func_definition"
+        eval "$__func_definition"
     else
-        func_name="$func"
+        __func_name="$__func"
     fi
-    local elem
-    local i=0
-    for elem in "$@"
+    local __elem
+    local __i=0
+    for __elem in "$@"
     do
-        elem=${elem//\'/\'\\\'\'}
-        eval "$func_name '$elem' '$i'"
-        ((i++))
+        __elem=${__elem//\'/\'\\\'\'}
+        eval "$__func_name '$__elem' '$__i'"
+        ((__i++))
     done
-    unset tmp_func
+    unset __tmp_func
 }
 
 function arr.each() {
-    local func=$1
-    func=${func//\'/\'\\\'\'}
-    local arr_name=$2
-    eval "arr._each '$func' \"\${$arr_name[@]}\""
+    local __func=$1
+    __func=${__func//\'/\'\\\'\'}
+    local __arr_name=$2
+    eval "arr._each '$__func' \"\${$__arr_name[@]}\""
 }
 
 function arr._subarr() {
-    local new_arr_name=$1
+    local __new_arr_name=$1
     shift
-    local offset=$1
+    local __offset=$1
     shift
-    local length=$1
+    local __length=$1
     shift
-    if [ "$offset" -gt 0 ]; then
-        for i in $(seq 1 "$offset"); do
+    local __size=$(arr._size "$@")
+    if [ "$__length" -lt 1 ]; then
+        eval "$__new_arr_name=()"
+        return 0
+    fi
+    if [ "$__offset" -gt 0 ]; then
+        for i in $(seq 1 "$__offset"); do
             shift
         done
     fi
-    local joined_array=""
-    for i in $(seq 1 "$length"); do
-        local item=${!i}        
-        item=${item//\'/\'\\\'\'}
-        joined_array="$joined_array' '$item"
+    if ((__length > __size - __offset)); then
+        __length=$((__size - __offset))
+    fi
+    local __joined_array=""
+    local __i
+    for __i in $(seq 1 "$__length"); do
+        local __item=${!__i}        
+        __item=${__item//\'/\'\\\'\'}
+        __joined_array="$__joined_array' '$__item"
     done
-    joined_array=${joined_array#\' \'}
-    eval "$new_arr_name=('$joined_array')"
+    __joined_array=${__joined_array#\' \'}
+    eval "$__new_arr_name=('$__joined_array')"
 }
 
-function arr.subarr() {    
+function arr.subarr() {
     eval "arr._subarr '$1' '$2' '$3' \"\${$4[@]}\""
 }
 

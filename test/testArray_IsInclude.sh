@@ -3,17 +3,17 @@
 function testArray_IsInclude() {
 
     a=(10 20 "h w" '$"' "'" '\ ')
-    assertTrue 'arr._is_include "10" "${a[@]}"'
-    assertTrue 'arr._is_include "20" "${a[@]}"'
-    assertTrue 'arr._is_include "h w" "${a[@]}"'
-    assertTrue 'arr._is_include "\$\"" "${a[@]}"'
-    assertTrue 'arr._is_include "'\''" "${a[@]}"'
-    assertTrue 'arr._is_include "\\ " "${a[@]}"'
-    assertFalse 'arr._is_include "30" "${a[@]}"'
-    assertFalse 'arr._is_include "\$" "${a[@]}"'
-    assertFalse 'arr._is_include "\"" "${a[@]}"'
-    assertFalse 'arr._is_include "\\" "${a[@]}"'
-    assertFalse 'arr._is_include "'\'\''" "${a[@]}"'
+    assertTrue 'arr._include? "10" "${a[@]}"'
+    assertTrue 'arr._include? "20" "${a[@]}"'
+    assertTrue 'arr._include? "h w" "${a[@]}"'
+    assertTrue 'arr._include? "\$\"" "${a[@]}"'
+    assertTrue 'arr._include? "'\''" "${a[@]}"'
+    assertTrue 'arr._include? "\\ " "${a[@]}"'
+    assertFalse 'arr._include? "30" "${a[@]}"'
+    assertFalse 'arr._include? "\$" "${a[@]}"'
+    assertFalse 'arr._include? "\"" "${a[@]}"'
+    assertFalse 'arr._include? "\\" "${a[@]}"'
+    assertFalse 'arr._include? "'\'\''" "${a[@]}"'
 }
 
 
