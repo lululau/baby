@@ -227,6 +227,9 @@ function arr._subarr() {
     local __length=$1
     shift
     local __size=$(arr._size "$@")
+    if ((__length > __size - __offset)); then
+        __length=$((__size - __offset))
+    fi
     if [ "$__length" -lt 1 ]; then
         eval "$__new_arr_name=()"
         return 0
@@ -235,9 +238,6 @@ function arr._subarr() {
         for i in $(seq 1 "$__offset"); do
             shift
         done
-    fi
-    if ((__length > __size - __offset)); then
-        __length=$((__size - __offset))
     fi
     local __joined_array=""
     local __i
@@ -254,80 +254,72 @@ function arr.subarr() {
     eval "arr._subarr '$1' '$2' '$3' \"\${$4[@]}\""
 }
 
-function arr._pop() {
-    local new_arr_name=$1
+function arr.pop!() {
+    local __poped_var_name=$1
     shift
-    last_item=${!#}
-    echo "$last_item"
-    arr._subarr "$new_arr_name" 0 $(($# - 1)) "$@"
-}
-
-function arr.pop() {
-    eval "arr._pop '$1' \"\${$2[@]}\""
-}
-
-function arr._push() {
-    local new_arr_name=$1
+    local __arr_name=$1
     shift
-    local push_val=$1
-    push_val=${push_val//\'/\'\\\'\'}
+    local __last_item
+    local __arr_size=$(arr.size $__arr_name)
+    if ((__arr_size < 1)); then
+        return 1
+    fi
+    eval "__last_item=\${$__arr_name[$((__arr_size-1))]}"
+    __last_item=${__last_item//\'/\'\\\'\'}
+    eval "$__poped_var_name='$__last_item'"
+    arr.subarr "$__arr_name" 0 $((__arr_size-1)) "$__arr_name"
+    return 0
+}
+
+function arr.push!() {
+    local __push_val=$1
+    __push_val=${__push_val//\'/\'\\\'\'}
+    local __arr_name=$2
+    eval "$__arr_name+=('$__push_val')"
+}
+
+function arr.shift!() {
+    local __shifted_var_name=$1
     shift
-    arr._grep "$new_arr_name" true "$@"
-    eval "$new_arr_name+=('$push_val')"
-}
-
-function arr.push() {
-    local push_val=$2
-    push_val=${push_val//\'/\'\\\'\'}
-    eval "arr._push '$1' '$push_val' \"\${$3[@]}\""
-}
-
-function arr._shift() {
-    local new_arr_name=$1
+    local __arr_name=$1
     shift
-    first_item=$1
-    echo "$first_item"
-    arr._subarr "$new_arr_name" 1 $(($# - 1)) "$@"    
+    local __arr_size=$(arr.size $__arr_name)
+    if ((__arr_size < 1)); then
+        return 1
+    fi
+    local __first_item
+    eval "__first_item=\${$__arr_name[0]}"
+    __first_item=${__first_item//\'/\'\\\'\'}
+    eval "$__shifted_var_name='$__first_item'"
+    arr.subarr "$__arr_name" 1 $__arr_size "$__arr_name"
+    return 0
 }
 
-function arr.shift() {
-    eval "arr._shift '$1' \"\${$2[@]}\""
-}
-
-function arr._unshift() {
-    local new_arr_name=$1
-    shift
-    local unshift_val=$1
-    unshift_val=${unshift_val//\'/\'\\\'\'}
-    shift    
-    local joined_array=""
-    for i in "$@"
-    do
-        i=${i//\'/\'\\\'\'}
-        joined_array="$joined_array' '$i"
-    done
-    joined_array=${joined_array#\' \'}
-    eval "$new_arr_name=('$unshift_val' '$joined_array')"
-}
-
-function arr.unshift() {
-    local unshift_val=$2
-    unshift_val=${unshift_val//\'/\'\\\'\'}
-    eval "arr._unshift '$1' '$unshift_val' \"\${$3[@]}\""
+function arr.unshift!() {
+    local __unshift_val=$1
+    __unshift_val=${__unshift_val//\'/\'\\\'\'}
+    local __arr_name=$2
+    local __arr_repr=$(arr.print "$__arr_name")
+    eval "$__arr_name=('$__unshift_val' ${__arr_repr:1}"
 }
 
 function arr._reverse() {
-    local new_arr_name=$1
+    local __new_arr_name=$1
     shift
-    local arr_size=$#
-    local joined_array=""
-    for i in $(seq $# 1); do
-        local item=${!i}
-        item=${item//\'/\'\\\'\'}
-        joined_array="$joined_array' '$item"
+    local __arr_size=$#
+    if ((__arr_size < 1)); then
+        eval "$__new_arr_name=()"
+        return
+    fi
+    local __joined_array=""
+    local __i
+    for __i in $(seq $# 1); do
+        local __item=${!__i}
+        __item=${__item//\'/\'\\\'\'}
+        __joined_array="$__joined_array' '$__item"
     done
-    joined_array=${joined_array#\' \'}
-    eval "$new_arr_name=('$joined_array')"
+    __joined_array=${__joined_array#\' \'}
+    eval "$__new_arr_name=('$__joined_array')"
 }
 
 function arr.reverse() {
@@ -335,9 +327,7 @@ function arr.reverse() {
 }
 
 function arr._first() {
-    local tmp_arr
-    arr._shift tmp_arr "$@"
-    unset tmp_arr
+    echo "$1"
 }
 
 function arr.first() {
@@ -345,9 +335,13 @@ function arr.first() {
 }
 
 function arr._last() {
-    local tmp_arr
-    arr._pop tmp_arr "$@"
-    unset tmp_arr
+    local __size=$(arr._size "$@")
+    if ((__size < 1)); then
+        echo ""
+        return 1
+    fi
+    echo "${!__size}"
+    return 0
 }
 
 function arr.last() {
@@ -363,7 +357,7 @@ function arr.size() {
 }
 
 function arr._length() {
-    arr._length "$@"
+    arr._size "$@"
 }
 
 function arr.length() {
@@ -371,9 +365,9 @@ function arr.length() {
 }
 
 function arr._copy() {
-    local new_arr_name=$1
+    local __new_arr_name=$1
     shift
-    eval "$new_arr_name=$(arr._print "$@")"
+    eval "$__new_arr_name=$(arr._print "$@")"
 }
 
 function arr.copy() {
@@ -389,14 +383,18 @@ function arr.cp() {
 }
 
 function arr.range() {
-    local arr_var_name=$1
-    local start=$2
-    local end=$3
-    local step="$4"
-    if [ -z "$step" ]; then
-        step=1
+    local __arr_var_name=$1
+    local __start=$2
+    local __end=$3
+    local __step="$4"
+    if [ -z "$__step" ]; then
+        if ((__start > __end)); then
+            __step=-1
+        else
+            __step=1
+        fi
     fi
-    eval "$arr_var_name=($(seq "$start" "$step" "$end"))"
+    eval "$__arr_var_name=($(seq "$__start" "$__step" "$__end"))"
 }
 
 function str.split() {
