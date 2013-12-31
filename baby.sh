@@ -1,11 +1,27 @@
 #!/bin/bash
 
-# example:
-#     arr._join ", " "$@"
-#     arr._join ", " "${my_arr[@]}"
-# comments:
-#     echo the joined string to stdout.
 function arr._join() {
+
+    local __help=$(cat <<"EOF"
+Usage:
+
+    arr._join <separator> <elements of array>
+    join <elements of array> to a string with <separator>, then write the joined string to stdout.
+
+<example>:
+
+    1. arr._join , hello world haha
+
+       "hello,world,haha" will be written to stdout.
+
+    2. a=(10 20 30 40)
+       s=$(arr._join "-" "${a[@]}")
+
+       value of s will be "10-20-30-40"
+EOF
+        )
+
+    func.help "$__help" "$@" && return 0
     local __delimiter=$1
     shift
     if [ -z "$1" ]
@@ -22,11 +38,13 @@ function arr._join() {
     echo "$__return_value"
 }
 
-# example:
-#     arr.join ", " "my_arr"  # my_arr is the name of some array variable
-# comments:
-#     echo the joined string to stdout.
-function arr.join() {    
+function arr.join() {
+    local __help=$(cat <<"EOF"
+Usage:        
+
+    arr.join <separator> <name of array>
+EOF
+)
     local __arr_name=$2
     local __delimiter=$1
     __delimiter=${__delimiter//\'/\'\\\'\'}
@@ -398,11 +416,11 @@ function arr.range() {
 }
 
 function str.split() {
-    local arr_name=$1
-    local splitor=$2
-    local string=$3
-    local arr_repr="($(echo "$string" | perl -lne 'chomp;print join " ", map {s#\\#\\\\#g;s#"#\\"#g;s#\$#\\\$#g;qq/"$_"/} split "'${splitor}'"'))"
-    eval "$arr_name=$arr_repr"
+    local __arr_name=$1
+    local __splitor=$2
+    local __string=$3
+    local __arr_repr="($(echo "$__string" | perl -lne 'chomp;print join " ", map {s#\\#\\\\#g;s#"#\\"#g;s#\$#\\\$#g;qq/"$_"/} split /'${__splitor}'/'))"
+    eval "$__arr_name=$__arr_repr"
 }
 
 function str.reverse() {
@@ -418,40 +436,84 @@ function str.length() {
 }
 
 function str.replace() {
-    local s_pattern=$1
-    local str=$2
-    echo "$str" | perl -pe "$s_pattern"
+    local __s_pattern=$1
+    local __str=$2
+    echo "$__str" | perl -pe "$__s_pattern"
 }
 
 function str.lines() {
-    echo "$1" | wc -l | grep -o '[0-9]*' --color=none
+    echo "$1" | wc -l | grep -oE '[0-9]+' --color=none
 }
 
 function num.times() {
     local __help=$(cat <<"EOF"
-        hahahaha
+Usage:   
+
+    num.times <n times> <function>
+
+    call <function> <n times>
+
+<n times>:
+
+    times the <function> will be invoked.
+
+<function>:
+
+    The function which will be invoked <n times>, passing in values from zero to n-1 as the first argument.
+
+    If the <function> arg only contains one line text, then it will be reguarded as name of a pre-defined function, for example:
+
+       function hello() {
+           echo "hello, $1"
+       }    
+
+       num.times 2 hello
+
+    Running the above code will print :
+
+       hello, 0
+       hello, 1
+
+    If the <funcrion> arg contains more than one line text, then it'll be treated as the body of a bash function definition, 
+    so it must be like this:
+
+       {
+           your code ....
+       }    
+
+    for example, the code below will print same text as the previous example:
+
+        num.times 2 "$(cat <<"EOF"
+        {
+             echo "hello, $1"
+        }
+        EOF
+        )"
 EOF
         )
     func.help "$__help" "$@" && return 0
     local __i
-    local times=$1
-    local func=$2
-    local func_lines=$(str.lines "$func")
-    local func_name="tmp_fuc"
-
-    if [ "$func_lines" -gt 1 ]; then
-        local func_definition="
-        function $func_name()
-        $func
-        "
-        eval "$func_definition"
-    else
-        func_name="$func"
+    local __times=$1
+    if ((__times < 1)); then
+        return 0
     fi
-    for __i in $(seq 1 "$times"); do
-        eval "$func_name '$((__i - 1))'"
+    local __func=$2
+    local __func_lines=$(str.lines "$__func")
+    local __func_name="__tmp_fuc"
+
+    if [ "$__func_lines" -gt 1 ]; then
+        local __func_definition="
+        function $__func_name()
+        $__func
+        "
+        eval "$__func_definition"
+    else
+        __func_name="$__func"
+    fi
+    for __i in $(seq 1 "$__times"); do
+        eval "$__func_name '$((__i - 1))'"
     done
-    unset tmp_func
+    unset __tmp_func
 }
 
 function func.help() {
